@@ -1,0 +1,172 @@
+<link href='https://fonts.googleapis.com/css?family=RobotoDraft:400,500,700,400italic' rel='stylesheet' type='text/css'>
+<template id="t">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :host {
+            display: block;
+            min-width: 450px;
+            max-width: 450px;
+            font-family: 'RobotoDraft', 'Roboto', sans-serif;
+            box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+        }
+
+        header {
+            padding: 25px 13px;
+        }
+
+        /*:host([data-theme="blue-grey"]) header {
+            background-color: #607D8B;
+            color: #fff;
+        }*/
+
+        /*header h1 {
+            font-weight: 100;
+        }*/
+
+        input {
+            font-size: 30px;
+            padding: 10px 10px 10px 5px;
+            display: block;
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #dfdfdf;
+            outline: 0;
+            transition: border-bottom 180ms ease-in-out;
+        }
+
+        input:focus {
+            border-bottom: 2px solid #2196F3;
+        }
+
+        .action-btn {
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 56px;
+            font-size: 24px;
+            background-color: #2196F3;
+            color: #fff;
+            box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+            outline: 0;
+        }
+
+        .action-btn:active {
+            background-color: #2081d9;
+        }
+
+        section#todos {
+            font-size: 20px;
+            line-height: 32px;
+            background-color: #f9f9f9;
+            color: rgba(0, 0, 0, .87);
+        }
+
+        .clearfix:after {
+            content: ".";
+            visibility: hidden;
+            display: block;
+            height: 0;
+            clear: both;
+        }
+
+        .item {
+            padding: 14px 10px;
+            border-bottom: 1px solid #dfdfdf;
+            float: left;
+            width: 100%;
+            display: block;
+            position: relative;
+        }
+
+        .component {
+            position: relative;
+            float: left;
+            left: 100%;
+        }
+
+        .left {
+            margin-left: -100%;
+            width: 10%;
+        }
+
+        .center {
+            margin-left: -90%;
+            width: 80%;
+        }
+
+        .right {
+            margin-left: -10%;
+        }
+
+        .left-icon {
+            /*position: absolute;*/
+            display: block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid #7e7e7e;
+            border-radius: 2px;
+            /*background-image: url("check.svg");
+            background-position: center;
+            background-repeat: no-repeat;*/
+            margin-right: 13px;
+        }
+
+        .label {
+            background-color: #2196F3;
+            color: #fff;
+            opacity: .7;
+            font-size: 0.8em;
+            padding: 3px 5px;
+        }
+    </style>
+
+    <!-- content tag -->
+    <div id="container">
+        <header>
+            <input type="text" placeholder="What to do">
+        </header>
+
+        <section id="todos" class="clearfix">
+            <div class="item">
+                <div class="component left">
+                    <span class="left-icon"></span>
+                </div>
+                <div class="component center">
+                    <p>Learning Backbone.js</p>
+                </div>
+
+                <div class="component right">
+                    <span class="label">Now</span>
+                </div>
+            </div>
+        </section>
+    </div>
+</template>
+
+<script>
+    // Element's self registration
+    (function () {
+        var importDoc = document.currentScript.ownerDocument;
+
+        // Define element
+        var XTodosProto = Object.create(HTMLElement.prototype);
+
+        XTodosProto.createdCallback = function () {
+            var root = this.createShadowRoot(),
+                    template = importDoc.querySelector('#t'),
+                    clone = document.importNode(template.content, true); // Deep copy
+
+            root.appendChild(clone);
+        };
+
+        // Register element
+        document.registerElement('x-todos', {
+            'prototype': XTodosProto
+        });
+    })();
+</script>
