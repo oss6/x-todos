@@ -17,8 +17,16 @@
         }
 
         header {
-            padding: 25px 13px 0 13px;
+            padding: 25px 13px;
             background-color: #607D8B;
+        }
+
+        header.with-data {
+            padding-bottom: 0;
+        }
+
+        header.with-data .tabs {
+            display: block;
         }
 
         /*:host([data-theme="blue-grey"]) header {
@@ -41,7 +49,6 @@
             border: none;
             border-radius: 2px;
             outline: 0;
-            transition: border-bottom 180ms ease-in-out;
         }
 
         .noselect {
@@ -72,7 +79,6 @@
         section#todos {
             font-size: 20px;
             line-height: 32px;
-            background-color: #f9f9f9;
             color: rgba(0, 0, 0, .87);
         }
 
@@ -87,10 +93,15 @@
         .item {
             padding: 14px 10px;
             border-bottom: 1px solid #dfdfdf;
+            background-color: #fff;
             float: left;
             width: 100%;
             display: block;
             position: relative;
+        }
+
+        .item:hover .close {
+            display: block;
         }
 
         .component {
@@ -128,21 +139,29 @@
         }
 
         .checkbox.checked {
+            background-color: #4285F4;
+            border: none;
             background-image: url("check.svg");
             background-position: center;
             background-repeat: no-repeat;
         }
 
-        .badge {
-            background-color: #2196F3;
-            color: #fff;
-            opacity: .7;
-            font-size: 0.8em;
-            padding: 3px 5px;
+        .close {
+            display: none;
+            width: 32px;
+            height: 32px;
+            opacity: .54;
+            background-image: url("close.svg");
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .close:hover {
+            opacity: 1;
         }
 
         .tabs {
-            list-style: none;
+            display: none;
             margin-top: 25px;
         }
 
@@ -172,15 +191,15 @@
         <header>
             <input type="text" id="todo-input" placeholder="What to do">
             <div class="tabs noselect">
-                <div class="active tab">
+                <div id="all" class="active tab">
                     ALL
                     <paper-ripple fit></paper-ripple>
                 </div>
-                <div class="tab">
+                <div id="active" class="tab">
                     ACTIVE
                     <paper-ripple fit></paper-ripple>
                 </div>
-                <div class="tab">
+                <div id="completed" class="tab">
                     COMPLETED
                     <paper-ripple fit></paper-ripple>
                 </div>
@@ -195,11 +214,11 @@
                     </div>
 
                     <div class="component center">
-                        <p>Learning Backbone.js</p>
+                        <p></p>
                     </div>
 
                     <div class="component right">
-                        <span class="badge">Now</span>
+                        <span class="close"></span>
                     </div>
                 </div>
             </template>
@@ -208,16 +227,68 @@
 </template>
 
 <script>
-    // Element's self registration
-    (function () {
+    (function (obs) {
         var importDoc = document.currentScript.ownerDocument;
+        var viewTodos;
 
         // Define element
         var XTodosProto = Object.create(HTMLElement.prototype);
-        var completedHandler = function (host) {
+
+        var completedHandler = function (host, root, index) {
             return function () {
                 this.classList.toggle('checked');
-                // Change completed property
+                host.model.data[index].completed = this.classList.contains('checked');
+                setCheckbox(this, this.classList.contains('checked'));
+            };
+        };
+
+        var setCheckbox = function (checkbox, completed, set) {
+            var item = checkbox.parentNode.parentNode;
+            var title = item.querySelector('.center > p');
+
+            title.style.textDecoration = completed ? 'line-through' : 'none';
+            item.style.backgroundColor = completed ? '#fafafa' : '#fff';
+
+            if (set) {
+                if (completed) {
+                    checkbox.classList.add('checked');
+                }
+                else {
+                    checkbox.classList.remove('checked');
+                }
+            }
+        };
+
+        var tabClickHandler = function (ripple, host, root) {
+            return function () {
+                root.querySelector('.active').classList.remove('active');
+                var tab = ripple.parentNode,
+                        tabID = tab.id;
+                tab.classList.add('active');
+
+                if (tabID === 'all') {
+                    host.model.revertOriginal();
+                }
+                else if (tabID === 'active') {
+                    host.model.setData(host.model.data.filter(function (el) {
+                        return !el.completed;
+                    }));
+                }
+                else if (tabID === 'completed') {
+                    host.model.setData(host.model.data.filter(function (el) {
+                        return el.completed;
+                    }));
+                }
+            };
+        };
+
+        var removeItem = function (host, root, index) {
+            return function () {
+                var len = host.model.data.removeAt(index);
+                // Hide tabs
+                if (len === 0) {
+                    root.querySelector('header').classList.toggle('with-data');
+                }
             };
         };
 
@@ -228,30 +299,60 @@
                     clone = document.importNode(template.content, true),
                     itemTemplate = clone.querySelector('#item-template');
 
+            // View and model
+            viewTodos = clone.querySelector('#todos');
+            viewTodos.update = function (o, arg) {
+                var i, items = viewTodos.querySelectorAll('.item'), itemsLen = items.length, dataLen = o.data.length;
+
+                // Clear view
+                for (i = 0; i < itemsLen; i++) {
+                    var item = items[i];
+                    item.parentNode.removeChild(item);
+                }
+
+                // Update view
+                for (i = 0; i < dataLen; i++) {
+                    var cloneItemTemplate = document.importNode(itemTemplate.content, true),
+                            todoItem = o.data[i],
+                            titleText = cloneItemTemplate.querySelector('.center p'),
+                            checkbox = cloneItemTemplate.querySelector('.checkbox'),
+                            close = cloneItemTemplate.querySelector('.close');
+
+                    titleText.innerHTML = todoItem.title;
+                    close.addEventListener('click', removeItem(self, root, i), false);
+                    checkbox.addEventListener('click', completedHandler(self, root, i), false);
+                    setCheckbox(checkbox, todoItem.completed, true);
+
+                    viewTodos.appendChild(cloneItemTemplate);
+                }
+            };
+            self.model = new obs.Observable();
+            self.model.addObserver(viewTodos);
+
+            // Input handler
             var todoInput = clone.querySelector('#todo-input');
             todoInput.addEventListener('keypress', function (e) {
                 if (e.keyCode === 13) {
                     // Create
-                    self.model.push({
+                    self.model.data.push({
                         'title': this.value,
                         'completed': false
                     });
 
-                    var sectionTodos = root.querySelector('#todos'),
-                            cloneItemTemplate = document.importNode(itemTemplate.content, true);
+                    // Show tabs
+                    if (self.model.data.length === 1) {
+                        root.querySelector('header').classList.toggle('with-data');
+                    }
 
-                    cloneItemTemplate.querySelector('.center p').innerHTML = this.value;
-                    cloneItemTemplate.querySelector('.checkbox').addEventListener('click', completedHandler(self), false);
-                    sectionTodos.appendChild(cloneItemTemplate);
                     this.value = '';
                 }
             }, false);
 
-            var tabs = clone.querySelectorAll('tab');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].addEventListener('click', function () {
-                    console.log('ook');
-                }, false);
+            // Tab click handler
+            var ripples = clone.querySelectorAll('.tab > paper-ripple');
+            for (var i = 0; i < ripples.length; i++) {
+                var ripple = ripples[i];
+                ripple.addEventListener('click', tabClickHandler(ripple, self, root), false);
             }
 
             root.appendChild(clone);
@@ -263,5 +364,5 @@
         document.registerElement('x-todos', {
             'prototype': XTodosProto
         });
-    })();
+    })(obs);
 </script>
