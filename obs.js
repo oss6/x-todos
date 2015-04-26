@@ -6,33 +6,34 @@ var obs = (function () {
         var self = this;
 
         self.data = [];
-        self.data.push = function () {
-            for (var i = 0, l = arguments.length; i < l; i++) {
-                this[this.length] = arguments[i];
-                self.notifyObservers();
-            }
-            return this.length;
+        self.add = function (e) {
+            self.data.push(e);
+            self.notifyObservers();
+            return self.data.length;
         };
-        self.data.removeAt = function (iIndex) {
-            var vItem = this[iIndex];
+        self.removeAt = function (iIndex) {
+            var vItem = self.data[iIndex];
             if (vItem) {
-                this.splice(iIndex, 1);
+                self.data.splice(iIndex, 1);
             }
             self.notifyObservers();
-            return this.length;
+            return self.data.length;
         };
-        self.filter = function (p) {
+        self.filter = function (p, set) {
             var filtered = [];
             for (var i = 0, l = self.data.length; i < l; i++) {
                 if (p(self.data[i])) {
                     filtered.push(self.data[i]);
                 }
             }
-            self.notifyObservers(filtered);
-        };
-        self.setData = function (data) {
-            self.data = data;
-            self.notifyObservers();
+
+            if (set) {
+                self.data = filtered;
+                self.notifyObservers();
+            }
+            else {
+                self.notifyObservers(filtered);
+            }
         };
         self.refresh = function () {
             self.notifyObservers();

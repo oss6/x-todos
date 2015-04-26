@@ -25,7 +25,7 @@
             padding-bottom: 0;
         }
 
-        header.with-data .tabs {
+        header.with-data .tabs, .with-data {
             display: block;
         }
 
@@ -184,6 +184,15 @@
             border-radius: 2px;
             overflow: hidden;
         }
+
+        footer {
+            display: none;
+            cursor: default;
+            background-color: #455A64;
+            color: #fff;
+            text-align: center;
+            padding: 18px 0;
+        }
     </style>
 
     <!-- content tag -->
@@ -223,6 +232,10 @@
                 </div>
             </template>
         </section>
+
+        <footer id="clear-completed" class="noselect">
+            CLEAR COMPLETED
+        </footer>
     </div>
 </template>
 
@@ -261,20 +274,23 @@
 
         var tabClickHandler = function (ripple, host, root) {
             return function () {
-                root.querySelector('.active').classList.remove('active');
-                var tab = ripple.parentNode,
-                        tabID = tab.id;
+                var prevTab = root.querySelector('.active');
+                var prevTabID = prevTab.id;
+                var tab = ripple.parentNode;
+                var tabID = tab.id;
+
+                prevTab.classList.remove('active');
                 tab.classList.add('active');
 
-                if (tabID === 'all') {
+                if (tabID === 'all' && prevTabID !== 'all') {
                     host.model.refresh();
                 }
-                else if (tabID === 'active') {
+                else if (tabID === 'active' && prevTabID !== 'active') {
                     host.model.filter(function (el) {
                         return !el.completed;
                     });
                 }
-                else if (tabID === 'completed') {
+                else if (tabID === 'completed' && prevTabID !== 'completed') {
                     host.model.filter(function (el) {
                         return el.completed;
                     });
@@ -282,12 +298,33 @@
             };
         };
 
+        var refreshFromActiveTab = function (id, host) {
+            if (id === 'all') {
+                host.model.refresh();
+            }
+            else if (id === 'active') {
+                host.model.filter(function (el) {
+                    return !el.completed;
+                });
+            }
+            else if (id === 'completed') {
+                host.model.filter(function (el) {
+                    return el.completed;
+                });
+            }
+        };
+
         var removeItem = function (host, root, index) {
             return function () {
-                var len = host.model.data.removeAt(index);
+                console.log(index);
+                console.log(host.model.data[index]);
+                var len = host.model.removeAt(index);
+                refreshFromActiveTab(root.querySelector('.active').id, host);
+
                 // Hide tabs
                 if (len === 0) {
                     root.querySelector('header').classList.toggle('with-data');
+                    root.querySelector('footer').classList.toggle('with-data');
                 }
             };
         };
@@ -334,7 +371,7 @@
             todoInput.addEventListener('keypress', function (e) {
                 if (e.keyCode === 13) {
                     // Create
-                    self.model.data.push({
+                    self.model.add({
                         'title': this.value,
                         'completed': false
                     });
@@ -342,6 +379,7 @@
                     // Show tabs
                     if (self.model.data.length === 1) {
                         root.querySelector('header').classList.toggle('with-data');
+                        root.querySelector('footer').classList.toggle('with-data');
                     }
 
                     this.value = '';
@@ -354,6 +392,14 @@
                 var ripple = ripples[i];
                 ripple.addEventListener('click', tabClickHandler(ripple, self, root), false);
             }
+
+            // Clear completed
+            var clearCompleted = clone.querySelector('#clear-completed');
+            clearCompleted.addEventListener('click', function () {
+                self.model.filter(function (el) {
+                    return !el.completed;
+                }, true);
+            });
 
             root.appendChild(clone);
         };
