@@ -14,13 +14,6 @@
             max-width: 450px;
             font-family: 'RobotoDraft', 'Roboto', sans-serif;
             box-shadow: 0 12px 15px 0 rgba(0, 0, 0, 0.26);
-
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
         }
 
         header {
@@ -49,6 +42,15 @@
             border-radius: 2px;
             outline: 0;
             transition: border-bottom 180ms ease-in-out;
+        }
+
+        .noselect {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
         .action-btn {
@@ -95,6 +97,11 @@
             position: relative;
             float: left;
             left: 100%;
+        }
+
+        .component p {
+            overflow: hidden !important;
+            text-overflow: ellipsis;
         }
 
         .left {
@@ -164,7 +171,7 @@
     <div id="container">
         <header>
             <input type="text" id="todo-input" placeholder="What to do">
-            <div class="tabs">
+            <div class="tabs noselect">
                 <div class="active tab">
                     ALL
                     <paper-ripple fit></paper-ripple>
@@ -207,8 +214,11 @@
 
         // Define element
         var XTodosProto = Object.create(HTMLElement.prototype);
-        var completedHandler = function () {
-            this.classList.toggle('checked');
+        var completedHandler = function (host) {
+            return function () {
+                this.classList.toggle('checked');
+                // Change completed property
+            };
         };
 
         XTodosProto.createdCallback = function () {
@@ -223,14 +233,15 @@
                 if (e.keyCode === 13) {
                     // Create
                     self.model.push({
-                        'title': this.value
+                        'title': this.value,
+                        'completed': false
                     });
 
                     var sectionTodos = root.querySelector('#todos'),
                             cloneItemTemplate = document.importNode(itemTemplate.content, true);
 
                     cloneItemTemplate.querySelector('.center p').innerHTML = this.value;
-                    cloneItemTemplate.querySelector('.checkbox').addEventListener('click', completedHandler, false);
+                    cloneItemTemplate.querySelector('.checkbox').addEventListener('click', completedHandler(self), false);
                     sectionTodos.appendChild(cloneItemTemplate);
                     this.value = '';
                 }
@@ -242,11 +253,6 @@
                     console.log('ook');
                 }, false);
             }
-
-            /**var completedCheckbox = itemTemplate.querySelector('#completed');
-            completedCheckbox.addEventListener('click', function () {
-                console.log('hye');
-            }, false);*/
 
             root.appendChild(clone);
         };
