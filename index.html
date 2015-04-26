@@ -5,6 +5,10 @@
     <title>X-TODO | Web component</title>
 
     <link rel="import" href="x-todos.html">
+    <style>
+        body {transition: opacity ease-in 0.2s; }
+        body[unresolved] {opacity: 0; display: block; overflow: hidden; position: relative; }
+    </style>
 </head>
 <body>
     <x-todos data-theme="blue-grey"></x-todos>

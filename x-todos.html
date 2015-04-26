@@ -1,4 +1,5 @@
 <link href='https://fonts.googleapis.com/css?family=RobotoDraft:400,500,700,400italic' rel='stylesheet' type='text/css'>
+<link rel="import" href="https://www.polymer-project.org/0.5/components/paper-ripple/paper-ripple.html">
 <template id="t">
     <style>
         * {
@@ -12,11 +13,19 @@
             min-width: 450px;
             max-width: 450px;
             font-family: 'RobotoDraft', 'Roboto', sans-serif;
-            box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+            box-shadow: 0 12px 15px 0 rgba(0, 0, 0, 0.26);
+
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
         header {
-            padding: 25px 13px;
+            padding: 25px 13px 0 13px;
+            background-color: #607D8B;
         }
 
         /*:host([data-theme="blue-grey"]) header {
@@ -29,18 +38,17 @@
         }*/
 
         input {
-            font-size: 30px;
-            padding: 10px 10px 10px 5px;
+            font-size: 20px;
+            font-weight: 100;
+            padding: 14px 17px;
+            box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+            background-color: #fafafa;
             display: block;
             width: 100%;
             border: none;
-            border-bottom: 1px solid #dfdfdf;
+            border-radius: 2px;
             outline: 0;
             transition: border-bottom 180ms ease-in-out;
-        }
-
-        input:focus {
-            border-bottom: 2px solid #2196F3;
         }
 
         .action-btn {
@@ -103,47 +111,91 @@
             margin-left: -10%;
         }
 
-        .left-icon {
-            /*position: absolute;*/
+        .checkbox {
             display: block;
             width: 32px;
             height: 32px;
             border: 3px solid #7e7e7e;
             border-radius: 2px;
-            /*background-image: url("check.svg");
-            background-position: center;
-            background-repeat: no-repeat;*/
             margin-right: 13px;
         }
 
-        .label {
+        .checkbox.checked {
+            background-image: url("check.svg");
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .badge {
             background-color: #2196F3;
             color: #fff;
             opacity: .7;
             font-size: 0.8em;
             padding: 3px 5px;
         }
+
+        .tabs {
+            list-style: none;
+            margin-top: 25px;
+        }
+
+        .tab {
+            position: relative;
+            display: inline-block;
+            color: #BBC7CE;
+            width: 32.7%;
+            padding: 13px 0;
+            text-align: center;
+            cursor: default;
+        }
+
+        .tab.active {
+            border-bottom: 2px solid #F7F9FA;
+            color: #F7F9FA;
+        }
+
+        .tab paper-ripple {
+            border-radius: 2px;
+            overflow: hidden;
+        }
     </style>
 
     <!-- content tag -->
     <div id="container">
         <header>
-            <input type="text" placeholder="What to do">
+            <input type="text" id="todo-input" placeholder="What to do">
+            <div class="tabs">
+                <div class="active tab">
+                    ALL
+                    <paper-ripple fit></paper-ripple>
+                </div>
+                <div class="tab">
+                    ACTIVE
+                    <paper-ripple fit></paper-ripple>
+                </div>
+                <div class="tab">
+                    COMPLETED
+                    <paper-ripple fit></paper-ripple>
+                </div>
+            </div>
         </header>
 
         <section id="todos" class="clearfix">
-            <div class="item">
-                <div class="component left">
-                    <span class="left-icon"></span>
-                </div>
-                <div class="component center">
-                    <p>Learning Backbone.js</p>
-                </div>
+            <template id="item-template">
+                <div class="item">
+                    <div class="component left">
+                        <span class="checkbox"></span>
+                    </div>
 
-                <div class="component right">
-                    <span class="label">Now</span>
+                    <div class="component center">
+                        <p>Learning Backbone.js</p>
+                    </div>
+
+                    <div class="component right">
+                        <span class="badge">Now</span>
+                    </div>
                 </div>
-            </div>
+            </template>
         </section>
     </div>
 </template>
@@ -155,14 +207,51 @@
 
         // Define element
         var XTodosProto = Object.create(HTMLElement.prototype);
+        var completedHandler = function () {
+            this.classList.toggle('checked');
+        };
 
         XTodosProto.createdCallback = function () {
-            var root = this.createShadowRoot(),
+            var self = this,
+                    root = self.createShadowRoot(),
                     template = importDoc.querySelector('#t'),
-                    clone = document.importNode(template.content, true); // Deep copy
+                    clone = document.importNode(template.content, true),
+                    itemTemplate = clone.querySelector('#item-template');
+
+            var todoInput = clone.querySelector('#todo-input');
+            todoInput.addEventListener('keypress', function (e) {
+                if (e.keyCode === 13) {
+                    // Create
+                    self.model.push({
+                        'title': this.value
+                    });
+
+                    var sectionTodos = root.querySelector('#todos'),
+                            cloneItemTemplate = document.importNode(itemTemplate.content, true);
+
+                    cloneItemTemplate.querySelector('.center p').innerHTML = this.value;
+                    cloneItemTemplate.querySelector('.checkbox').addEventListener('click', completedHandler, false);
+                    sectionTodos.appendChild(cloneItemTemplate);
+                    this.value = '';
+                }
+            }, false);
+
+            var tabs = clone.querySelectorAll('tab');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].addEventListener('click', function () {
+                    console.log('ook');
+                }, false);
+            }
+
+            /**var completedCheckbox = itemTemplate.querySelector('#completed');
+            completedCheckbox.addEventListener('click', function () {
+                console.log('hye');
+            }, false);*/
 
             root.appendChild(clone);
         };
+
+        XTodosProto.model = [];
 
         // Register element
         document.registerElement('x-todos', {
