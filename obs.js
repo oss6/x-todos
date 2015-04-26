@@ -6,11 +6,10 @@ var obs = (function () {
         var self = this;
 
         self.data = [];
-        self._original = self.data.slice(0);
         self.data.push = function () {
             for (var i = 0, l = arguments.length; i < l; i++) {
                 this[this.length] = arguments[i];
-                self.setChanged();
+                self.notifyObservers();
             }
             return this.length;
         };
@@ -19,16 +18,24 @@ var obs = (function () {
             if (vItem) {
                 this.splice(iIndex, 1);
             }
-            self.setChanged();
+            self.notifyObservers();
             return this.length;
+        };
+        self.filter = function (p) {
+            var filtered = [];
+            for (var i = 0, l = self.data.length; i < l; i++) {
+                if (p(self.data[i])) {
+                    filtered.push(self.data[i]);
+                }
+            }
+            self.notifyObservers(filtered);
         };
         self.setData = function (data) {
             self.data = data;
-            self.setChanged();
+            self.notifyObservers();
         };
-        self.revertOriginal = function () {
-            self.data = self._original.slice(0);
-            self.setChanged();
+        self.refresh = function () {
+            self.notifyObservers();
         };
         self._observers = [];
         self._changed = false;
@@ -38,31 +45,14 @@ var obs = (function () {
         this._observers.push(observer);
     };
 
-    _.Observable.prototype.clearChanged = function () {
-        this._changed = false;
-    };
+    _.Observable.prototype.notifyObservers = function (data) {
+        var i, len = this._observers.length;
 
-    _.Observable.prototype.hasChanged = function () {
-        return this._changed;
-    };
-
-    _.Observable.prototype.notifyObservers = function (arg) {
-        if (this.hasChanged()) {
-            var i, len = this._observers.length;
-
-            for (i = 0; i < len; i++) {
-                var observer = this._observers[i];
-                observer.update(this, arg);
-            }
-            this.clearChanged();
+        for (i = 0; i < len; i++) {
+            var observer = this._observers[i];
+            observer.update(data || this.data);
         }
     };
 
-    _.Observable.prototype.setChanged = function (obj) {
-        this._changed = true;
-        this.notifyObservers(obj);
-    };
-
     return _;
-
 })();

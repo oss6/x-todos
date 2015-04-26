@@ -267,17 +267,17 @@
                 tab.classList.add('active');
 
                 if (tabID === 'all') {
-                    host.model.revertOriginal();
+                    host.model.refresh();
                 }
                 else if (tabID === 'active') {
-                    host.model.setData(host.model.data.filter(function (el) {
+                    host.model.filter(function (el) {
                         return !el.completed;
-                    }));
+                    });
                 }
                 else if (tabID === 'completed') {
-                    host.model.setData(host.model.data.filter(function (el) {
+                    host.model.filter(function (el) {
                         return el.completed;
-                    }));
+                    });
                 }
             };
         };
@@ -301,8 +301,8 @@
 
             // View and model
             viewTodos = clone.querySelector('#todos');
-            viewTodos.update = function (o, arg) {
-                var i, items = viewTodos.querySelectorAll('.item'), itemsLen = items.length, dataLen = o.data.length;
+            viewTodos.update = function (data) {
+                var i, items = viewTodos.querySelectorAll('.item'), itemsLen = items.length, dataLen = data.length;
 
                 // Clear view
                 for (i = 0; i < itemsLen; i++) {
@@ -313,7 +313,7 @@
                 // Update view
                 for (i = 0; i < dataLen; i++) {
                     var cloneItemTemplate = document.importNode(itemTemplate.content, true),
-                            todoItem = o.data[i],
+                            todoItem = data[i],
                             titleText = cloneItemTemplate.querySelector('.center p'),
                             checkbox = cloneItemTemplate.querySelector('.checkbox'),
                             close = cloneItemTemplate.querySelector('.close');
