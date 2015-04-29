@@ -1,5 +1,4 @@
 <link href='https://fonts.googleapis.com/css?family=RobotoDraft:400,500,700,400italic' rel='stylesheet' type='text/css'>
-<link rel="import" href="https://www.polymer-project.org/0.5/components/paper-ripple/paper-ripple.html">
 <template id="t">
     <style>
         * {
@@ -21,22 +20,44 @@
             background-color: #607D8B;
         }
 
-        header.with-data {
-            padding-bottom: 0;
+        footer {
+            display: none;
+            cursor: default;
+            background-color: #455A64;
+            color: #fff;
+            text-align: center;
+            padding: 18px 0;
         }
 
-        header.with-data .tabs, .with-data {
-            display: block;
-        }
-
-        /*:host([data-theme="blue-grey"]) header {
+        :host([data-theme="blue-grey"]) header {
             background-color: #607D8B;
             color: #fff;
-        }*/
+        }
 
-        /*header h1 {
-            font-weight: 100;
-        }*/
+        :host([data-theme="blue-grey"]) footer {
+            background-color: #455A64;
+            color: #fff;
+        }
+
+        :host([data-theme="azure"]) header {
+            background-color: #2196F3;
+            color: #fff;
+        }
+
+        :host([data-theme="azure"]) footer {
+            background-color: #0D47A1;
+            color: #fff;
+        }
+
+        :host([data-theme="amber"]) header {
+            background-color: #FFC107;
+            color: #000;
+        }
+
+        :host([data-theme="amber"]) footer {
+            background-color: #FF6F00;
+            color: #000;
+        }
 
         input {
             font-size: 20px;
@@ -49,6 +70,10 @@
             border: none;
             border-radius: 2px;
             outline: 0;
+        }
+
+        .with-data {
+            display: block;
         }
 
         .noselect {
@@ -159,60 +184,12 @@
         .close:hover {
             opacity: 1;
         }
-
-        .tabs {
-            display: none;
-            margin-top: 25px;
-        }
-
-        .tab {
-            position: relative;
-            display: inline-block;
-            color: #BBC7CE;
-            width: 32.7%;
-            padding: 13px 0;
-            text-align: center;
-            cursor: default;
-        }
-
-        .tab.active {
-            border-bottom: 2px solid #F7F9FA;
-            color: #F7F9FA;
-        }
-
-        .tab paper-ripple {
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        footer {
-            display: none;
-            cursor: default;
-            background-color: #455A64;
-            color: #fff;
-            text-align: center;
-            padding: 18px 0;
-        }
     </style>
 
     <!-- content tag -->
     <div id="container">
         <header>
             <input type="text" id="todo-input" placeholder="What to do">
-            <div class="tabs noselect">
-                <div id="all" class="active tab">
-                    ALL
-                    <paper-ripple fit></paper-ripple>
-                </div>
-                <div id="active" class="tab">
-                    ACTIVE
-                    <paper-ripple fit></paper-ripple>
-                </div>
-                <div id="completed" class="tab">
-                    COMPLETED
-                    <paper-ripple fit></paper-ripple>
-                </div>
-            </div>
         </header>
 
         <section id="todos" class="clearfix">
@@ -272,58 +249,12 @@
             }
         };
 
-        var tabClickHandler = function (ripple, host, root) {
-            return function () {
-                var prevTab = root.querySelector('.active');
-                var prevTabID = prevTab.id;
-                var tab = ripple.parentNode;
-                var tabID = tab.id;
-
-                prevTab.classList.remove('active');
-                tab.classList.add('active');
-
-                if (tabID === 'all' && prevTabID !== 'all') {
-                    host.model.refresh();
-                }
-                else if (tabID === 'active' && prevTabID !== 'active') {
-                    host.model.filter(function (el) {
-                        return !el.completed;
-                    });
-                }
-                else if (tabID === 'completed' && prevTabID !== 'completed') {
-                    host.model.filter(function (el) {
-                        return el.completed;
-                    });
-                }
-            };
-        };
-
-        var refreshFromActiveTab = function (id, host) {
-            if (id === 'all') {
-                host.model.refresh();
-            }
-            else if (id === 'active') {
-                host.model.filter(function (el) {
-                    return !el.completed;
-                });
-            }
-            else if (id === 'completed') {
-                host.model.filter(function (el) {
-                    return el.completed;
-                });
-            }
-        };
-
         var removeItem = function (host, root, index) {
             return function () {
-                console.log(index);
-                console.log(host.model.data[index]);
                 var len = host.model.removeAt(index);
-                refreshFromActiveTab(root.querySelector('.active').id, host);
 
                 // Hide tabs
                 if (len === 0) {
-                    root.querySelector('header').classList.toggle('with-data');
                     root.querySelector('footer').classList.toggle('with-data');
                 }
             };
@@ -378,7 +309,6 @@
 
                     // Show tabs
                     if (self.model.data.length === 1) {
-                        root.querySelector('header').classList.toggle('with-data');
                         root.querySelector('footer').classList.toggle('with-data');
                     }
 
@@ -386,19 +316,16 @@
                 }
             }, false);
 
-            // Tab click handler
-            var ripples = clone.querySelectorAll('.tab > paper-ripple');
-            for (var i = 0; i < ripples.length; i++) {
-                var ripple = ripples[i];
-                ripple.addEventListener('click', tabClickHandler(ripple, self, root), false);
-            }
-
             // Clear completed
             var clearCompleted = clone.querySelector('#clear-completed');
             clearCompleted.addEventListener('click', function () {
                 self.model.filter(function (el) {
                     return !el.completed;
                 }, true);
+
+                if (self.model.data.length === 0) {
+                    root.querySelector('footer').classList.toggle('with-data');
+                }
             });
 
             root.appendChild(clone);
