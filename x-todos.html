@@ -228,6 +228,12 @@
             return function () {
                 this.classList.toggle('checked');
                 host.model.data[index].completed = this.classList.contains('checked');
+
+                // Update storage
+                var lstorage = JSON.parse(localStorage.getItem('todos'));
+                lstorage[index].completed = host.model.data[index].completed;
+                localStorage.setItem('todos', JSON.stringify(lstorage));
+
                 setCheckbox(this, this.classList.contains('checked'));
             };
         };
@@ -251,12 +257,7 @@
 
         var removeItem = function (host, root, index) {
             return function () {
-                var len = host.model.removeAt(index);
-
-                // Hide tabs
-                if (len === 0) {
-                    root.querySelector('footer').classList.toggle('with-data');
-                }
+                host.model.removeAt(index);
             };
         };
 
@@ -266,6 +267,28 @@
                     template = importDoc.querySelector('#t'),
                     clone = document.importNode(template.content, true),
                     itemTemplate = clone.querySelector('#item-template');
+
+            // Input handler
+            var todoInput = clone.querySelector('#todo-input');
+            todoInput.addEventListener('keypress', function (e) {
+                if (e.keyCode === 13) {
+                    // Create
+                    self.model.add({
+                        'title': this.value,
+                        'completed': false
+                    });
+
+                    this.value = '';
+                }
+            }, false);
+
+            // Clear completed
+            var clearCompleted = clone.querySelector('#clear-completed');
+            clearCompleted.addEventListener('click', function () {
+                self.model.filter(function (el) {
+                    return !el.completed;
+                }, true);
+            });
 
             // View and model
             viewTodos = clone.querySelector('#todos');
@@ -293,42 +316,22 @@
 
                     viewTodos.appendChild(cloneItemTemplate);
                 }
+
+                var clearCompleted = root.querySelector('footer');
+                if (dataLen > 0) {
+                    clearCompleted.classList.add('with-data');
+                }
+                else {
+                    clearCompleted.classList.remove('with-data');
+                }
+
             };
             self.model = new obs.Observable();
             self.model.addObserver(viewTodos);
 
-            // Input handler
-            var todoInput = clone.querySelector('#todo-input');
-            todoInput.addEventListener('keypress', function (e) {
-                if (e.keyCode === 13) {
-                    // Create
-                    self.model.add({
-                        'title': this.value,
-                        'completed': false
-                    });
-
-                    // Show tabs
-                    if (self.model.data.length === 1) {
-                        root.querySelector('footer').classList.toggle('with-data');
-                    }
-
-                    this.value = '';
-                }
-            }, false);
-
-            // Clear completed
-            var clearCompleted = clone.querySelector('#clear-completed');
-            clearCompleted.addEventListener('click', function () {
-                self.model.filter(function (el) {
-                    return !el.completed;
-                }, true);
-
-                if (self.model.data.length === 0) {
-                    root.querySelector('footer').classList.toggle('with-data');
-                }
-            });
-
             root.appendChild(clone);
+
+            self.model.notifyObservers(); // For local storage
         };
 
         XTodosProto.model = [];

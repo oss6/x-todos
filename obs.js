@@ -6,8 +6,18 @@ var obs = (function () {
         var self = this;
 
         self.data = [];
+        var temp = JSON.parse(localStorage.getItem('todos'));
+        if (temp) {
+            self.data = temp;
+        }
+
         self.add = function (e) {
             self.data.push(e);
+            self.notifyObservers();
+            return self.data.length;
+        };
+        self.concat = function (arr) {
+            self.data.concat(arr);
             self.notifyObservers();
             return self.data.length;
         };
@@ -48,6 +58,8 @@ var obs = (function () {
 
     _.Observable.prototype.notifyObservers = function (data) {
         var i, len = this._observers.length;
+
+        localStorage.setItem('todos', JSON.stringify(this.data));
 
         for (i = 0; i < len; i++) {
             var observer = this._observers[i];
